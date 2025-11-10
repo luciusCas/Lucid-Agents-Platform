@@ -1,14 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
+  "buildCommand": "pnpm install --prefer-offline && tsc -b && vite build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install --prefer-offline",
+  "framework": "vite",
+  "env": {
+    "NODE_ENV": "production"
+  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -18,13 +16,5 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "@vercel/node@2"
-    }
-  }
+  ]
 }
