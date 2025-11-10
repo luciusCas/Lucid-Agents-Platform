@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
 import { AgentMarketplace } from '@/types/agent'
 import { EDGE_FUNCTIONS, SUPABASE_ANON_KEY } from '@/lib/supabase'
-import { Loader2, Search, Filter, TrendingUp, Users, Zap } from 'lucide-react'
+import { Loader2, Search, Filter } from 'lucide-react'
 import AgentCard from '@/components/AgentCard'
 import StatsBar from '@/components/StatsBar'
+import HeroSection from '@/components/HeroSection'
+import CLISection from '@/components/CLISection'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function Marketplace() {
   const [agents, setAgents] = useState<AgentMarketplace[]>([])
@@ -24,7 +28,7 @@ export default function Marketplace() {
         order: 'desc',
         limit: '50'
       })
-      
+
       const response = await fetch(`${EDGE_FUNCTIONS.GET_MARKETPLACE}?${params}`, {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
@@ -33,7 +37,7 @@ export default function Marketplace() {
         }
       })
       const data = await response.json()
-      
+
       if (data.success) {
         setAgents(data.agents)
       } else {
@@ -48,8 +52,8 @@ export default function Marketplace() {
 
   const filteredAgents = agents.filter(agent => {
     const matchesSearch = agent.identity?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         agent.identity?.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         agent.category.toLowerCase().includes(searchQuery.toLowerCase())
+      agent.identity?.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      agent.category.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === 'all' || agent.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -61,20 +65,17 @@ export default function Marketplace() {
   const avgReputation = agents.length > 0 ? agents.reduce((sum, a) => sum + a.avg_reputation, 0) / agents.length : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Lucid Agents Platform
-          </h1>
-          <p className="text-gray-400 text-lg">
-            Tempat autonomous AI agents bertransaksi, berkolaborasi, dan berkembang dengan ERC-8004 & x402
-          </p>
-        </div>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <HeroSection />
 
+      {/* CLI Section with Scroll Animation */}
+      <CLISection />
+
+      {/* Marketplace Section */}
+      <div id="marketplace" className="max-w-7xl mx-auto px-4 py-12 space-y-8">
         {/* Stats Bar */}
-        <StatsBar 
+        <StatsBar
           totalAgents={agents.length}
           totalEarnings={totalEarnings}
           totalRequests={totalRequests}
@@ -82,54 +83,56 @@ export default function Marketplace() {
         />
 
         {/* Search and Filter */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+            <Input
               type="text"
               placeholder="Cari agents berdasarkan nama, deskripsi, atau kategori..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-9"
             />
           </div>
-          
-          <div className="flex gap-4">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">Semua Kategori</option>
-              {categories.filter(c => c !== 'all').map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
 
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="avg_reputation">Reputasi Tertinggi</option>
-              <option value="total_earnings">Earnings Tertinggi</option>
-              <option value="total_requests">Paling Populer</option>
-              <option value="created_at">Terbaru</option>
-            </select>
+          <div className="flex gap-3">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Kategori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Kategori</SelectItem>
+                {categories.filter(c => c !== 'all').map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Urutkan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="avg_reputation">Reputasi Tertinggi</SelectItem>
+                <SelectItem value="total_earnings">Earnings Tertinggi</SelectItem>
+                <SelectItem value="total_requests">Paling Populer</SelectItem>
+                <SelectItem value="created_at">Terbaru</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Agents Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
           <>
-            <div className="mb-4 text-gray-400">
+            <div className="text-sm text-muted-foreground">
               Menampilkan {filteredAgents.length} dari {agents.length} agents
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredAgents.map(agent => (
                 <AgentCard key={agent.id} agent={agent} />
               ))}
@@ -137,8 +140,8 @@ export default function Marketplace() {
 
             {filteredAgents.length === 0 && (
               <div className="text-center py-20">
-                <Filter className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                <p className="text-gray-500 text-lg">Tidak ada agents yang cocok dengan filter Anda</p>
+                <Filter className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground text-base">Tidak ada agents yang cocok dengan filter Anda</p>
               </div>
             )}
           </>

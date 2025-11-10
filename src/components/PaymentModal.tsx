@@ -1,7 +1,13 @@
 import { AgentMarketplace } from '@/types/agent'
-import { X, DollarSign, CreditCard, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { DollarSign, CreditCard, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import { EDGE_FUNCTIONS, SUPABASE_ANON_KEY } from '@/lib/supabase'
+import WalletSelector from './WalletSelector'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
+import { Button } from './ui/button'
+import { Card, CardContent } from './ui/card'
+import { Progress } from './ui/progress'
+import { Badge } from './ui/badge'
 
 interface PaymentModalProps {
   agent: AgentMarketplace
@@ -12,9 +18,16 @@ type DeploymentState = 'idle' | 'pending' | 'initializing' | 'registering_identi
 
 export default function PaymentModal({ agent, onClose }: PaymentModalProps) {
   const [walletAddress, setWalletAddress] = useState('')
+  const [walletProvider, setWalletProvider] = useState('')
   const [deploymentState, setDeploymentState] = useState<DeploymentState>('idle')
   const [error, setError] = useState('')
   const [deploymentId, setDeploymentId] = useState('')
+
+  const handleWalletSelect = (address: string, provider: string) => {
+    setWalletAddress(address)
+    setWalletProvider(provider)
+    setError('')
+  }
 
   const stateMessages = {
     idle: 'Siap untuk deploy',
@@ -26,9 +39,20 @@ export default function PaymentModal({ agent, onClose }: PaymentModalProps) {
     error: 'Terjadi kesalahan'
   }
 
+  const getProgress = () => {
+    switch (deploymentState) {
+      case 'pending': return 25
+      case 'initializing': return 50
+      case 'registering_identity': return 75
+      case 'configuring': return 90
+      case 'active': return 100
+      default: return 0
+    }
+  }
+
   const handleDeployment = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!walletAddress || walletAddress.length < 10) {
       setError('Masukkan wallet address yang valid')
       return
@@ -38,14 +62,12 @@ export default function PaymentModal({ agent, onClose }: PaymentModalProps) {
     setDeploymentState('pending')
 
     try {
-      // Simulate deployment states with realistic timing
       await new Promise(resolve => setTimeout(resolve, 800))
       setDeploymentState('initializing')
 
       await new Promise(resolve => setTimeout(resolve, 1000))
       setDeploymentState('registering_identity')
 
-      // Call create-agent-identity edge function
       const createIdentityResponse = await fetch(EDGE_FUNCTIONS.CREATE_AGENT_IDENTITY, {
         method: 'POST',
         headers: {
@@ -78,7 +100,6 @@ export default function PaymentModal({ agent, onClose }: PaymentModalProps) {
       await new Promise(resolve => setTimeout(resolve, 1000))
       setDeploymentState('configuring')
 
-      // Process payment transaction
       const paymentResponse = await fetch(EDGE_FUNCTIONS.PROCESS_PAYMENT, {
         method: 'POST',
         headers: {
@@ -108,10 +129,8 @@ export default function PaymentModal({ agent, onClose }: PaymentModalProps) {
       await new Promise(resolve => setTimeout(resolve, 800))
       setDeploymentState('active')
 
-      // Auto-close after success
       setTimeout(() => {
         onClose()
-        // Optionally navigate to the new agent's detail page
         if (deploymentId) {
           window.location.href = `/agent/${deploymentId}`
         }
@@ -129,148 +148,146 @@ export default function PaymentModal({ agent, onClose }: PaymentModalProps) {
   const isError = deploymentState === 'error'
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700 max-w-md w-full p-6 relative">
-        <button
-          onClick={onClose}
-          disabled={isProcessing}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-        >
-          <X className="w-6 h-6" />
-        </button>
-
-        <h2 className="text-2xl font-bold text-white mb-4">Deploy Agent</h2>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Deploy Agent</DialogTitle>
+        </DialogHeader>
 
         {isSuccess ? (
-          <div className="text-center py-8">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-pulse" />
-            <h3 className="text-xl font-bold text-white mb-2">Deployment Berhasil!</h3>
-            <p className="text-gray-400 mb-2">{stateMessages.active}</p>
-            {deploymentId && (
-              <p className="text-sm text-blue-400 font-mono">
-                Agent ID: {deploymentId.substring(0, 20)}...
-              </p>
-            )}
+          <div className="text-center py-8 space-y-4">
+            <CheckCircle className="w-16 h-16 text-primary mx-auto animate-pulse" />
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold font-serif">Deployment Berhasil!</h3>
+              <p className="text-sm text-muted-foreground">{stateMessages.active}</p>
+              {deploymentId && (
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {deploymentId.substring(0, 20)}...
+                </Badge>
+              )}
+            </div>
           </div>
         ) : (
-          <>
+          <div className="space-y-4">
             {/* Agent Info */}
-            <div className="bg-gray-700/30 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-3 mb-3">
-                <img 
-                  src={agent.identity?.image_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=default'} 
-                  alt={agent.identity?.name}
-                  className="w-12 h-12 rounded-lg"
-                />
-                <div>
-                  <h3 className="text-white font-semibold">{agent.identity?.name}</h3>
-                  <p className="text-gray-400 text-sm">{agent.category}</p>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <img
+                    src={agent.identity?.image_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=default'}
+                    alt={agent.identity?.name}
+                    className="w-12 h-12 rounded-lg ring-1 ring-border"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">{agent.identity?.name}</h3>
+                    <Badge variant="secondary" className="text-xs mt-1">{agent.category}</Badge>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between pt-3 border-t border-gray-600">
-                <span className="text-gray-400">Biaya Deployment:</span>
-                <span className="text-xl font-bold text-green-400">
-                  ${agent.price_per_request.toFixed(2)} USDC
-                </span>
-              </div>
-            </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <span className="text-sm text-muted-foreground">Biaya Deployment:</span>
+                  <span className="text-lg font-bold text-primary">
+                    ${agent.price_per_request.toFixed(2)} USDC
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Deployment Progress */}
             {isProcessing && (
-              <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-white font-semibold text-sm mb-1">
-                      {stateMessages[deploymentState]}
-                    </p>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                        style={{ 
-                          width: deploymentState === 'pending' ? '25%' :
-                                 deploymentState === 'initializing' ? '50%' :
-                                 deploymentState === 'registering_identity' ? '75%' :
-                                 deploymentState === 'configuring' ? '90%' : '100%'
-                        }}
-                      />
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <p className="text-sm font-semibold">{stateMessages[deploymentState]}</p>
+                      <Progress value={getProgress()} className="h-1.5" />
                     </div>
                   </div>
-                </div>
-                <div className="space-y-1 text-xs text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${deploymentState === 'pending' ? 'bg-blue-400 animate-pulse' : 'bg-green-400'}`} />
-                    <span>Memulai deployment</span>
+
+                  <div className="space-y-1.5 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${deploymentState === 'pending' ? 'bg-primary animate-pulse' : 'bg-primary'}`} />
+                      <span>Memulai deployment</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${deploymentState === 'initializing' ? 'bg-primary animate-pulse' : deploymentState === 'registering_identity' || deploymentState === 'configuring' ? 'bg-primary' : 'bg-muted'}`} />
+                      <span>Inisialisasi agent</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${deploymentState === 'registering_identity' ? 'bg-primary animate-pulse' : deploymentState === 'configuring' ? 'bg-primary' : 'bg-muted'}`} />
+                      <span>Registrasi ERC-8004 identity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${deploymentState === 'configuring' ? 'bg-primary animate-pulse' : 'bg-muted'}`} />
+                      <span>Konfigurasi final</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${deploymentState === 'initializing' ? 'bg-blue-400 animate-pulse' : deploymentState === 'registering_identity' || deploymentState === 'configuring' ? 'bg-green-400' : 'bg-gray-600'}`} />
-                    <span>Inisialisasi agent</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${deploymentState === 'registering_identity' ? 'bg-blue-400 animate-pulse' : deploymentState === 'configuring' ? 'bg-green-400' : 'bg-gray-600'}`} />
-                    <span>Registrasi ERC-8004 identity</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${deploymentState === 'configuring' ? 'bg-blue-400 animate-pulse' : 'bg-gray-600'}`} />
-                    <span>Konfigurasi final</span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Payment Form */}
             {!isProcessing && (
-              <form onSubmit={handleDeployment}>
-                <div className="mb-4">
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Wallet Address (Base Network)
-                  </label>
-                  <input
-                    type="text"
-                    value={walletAddress}
-                    onChange={(e) => setWalletAddress(e.target.value)}
-                    placeholder="0x..."
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <form onSubmit={handleDeployment} className="space-y-4">
+                <WalletSelector
+                  onWalletSelect={handleWalletSelect}
+                  isLoading={isProcessing}
+                />
 
-                {isError && error && (
-                  <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-red-400 text-sm">{error}</div>
-                  </div>
+                {walletAddress && (
+                  <Card className="bg-primary/10 border-primary/30">
+                    <CardContent className="p-3">
+                      <p className="text-xs font-semibold mb-2">📱 Wallet Terkoneksi</p>
+                      <div className="flex items-center justify-between text-xs">
+                        <code className="text-muted-foreground">
+                          {walletAddress.substring(0, 10)}...{walletAddress.substring(walletAddress.length - 8)}
+                        </code>
+                        <Badge variant="secondary" className="text-xs">{walletProvider}</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
-                <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <div className="flex items-start gap-2 mb-2">
-                    <CreditCard className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-gray-300">
+                {isError && error && (
+                  <Card className="bg-destructive/10 border-destructive/30">
+                    <CardContent className="p-3 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-destructive">{error}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card className="bg-accent/10 border-accent/20">
+                  <CardContent className="p-3 flex items-start gap-2">
+                    <CreditCard className="w-4 h-4 text-accent-foreground flex-shrink-0 mt-0.5" />
+                    <div className="text-xs">
                       <p className="font-semibold mb-1">x402 Payment System</p>
-                      <p className="text-gray-400 text-xs">
+                      <p className="text-muted-foreground">
                         Pembayaran feeless (~$0.0001 gas) dengan finality ~200ms pada Base Network
                       </p>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <button
+                <Button
                   type="submit"
-                  disabled={isProcessing}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  disabled={isProcessing || !walletAddress}
+                  className="w-full"
+                  size="lg"
                 >
-                  <DollarSign className="w-5 h-5" />
+                  <DollarSign className="w-4 h-4" />
                   Pay ${agent.price_per_request.toFixed(2)} & Deploy
-                </button>
+                </Button>
               </form>
             )}
 
-            <p className="text-xs text-gray-500 text-center mt-4">
+            <p className="text-xs text-muted-foreground text-center">
               Menggunakan protokol ERC-8004 untuk identity & reputation management
             </p>
-          </>
+          </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
