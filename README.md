@@ -254,6 +254,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by MiniMax Agent**
+**Built with ❤️ by me**
 
 *Empowering the future of autonomous agent commerce*
