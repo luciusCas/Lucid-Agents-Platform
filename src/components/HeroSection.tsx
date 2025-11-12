@@ -51,6 +51,25 @@ export default function HeroSection() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(124,144,130,0.1),transparent_50%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(54,68,58,0.08),transparent_50%)]" />
 
+            {/* Twitter/X Logo - Top Left */}
+            <div className="absolute top-8 left-8 z-10">
+                <a
+                    href="https://twitter.com/LucidAgents"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all duration-300 hover:scale-110"
+                    title="Follow us on X (Twitter)"
+                >
+                    <svg
+                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.207-6.807-5.974 6.807H2.882l7.73-8.835L1.24 2.25h6.837l4.859 6.426 5.527-6.426zM17.25 20.428h1.828L6.883 3.995H5.017l12.233 16.433z" />
+                    </svg>
+                </a>
+            </div>
+
             <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
                 <div className="space-y-12">
                     {/* Hero Content with Mascot */}
