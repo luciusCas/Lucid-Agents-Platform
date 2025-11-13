@@ -1,19 +1,17 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { database } from '../config/database';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 
 const generateToken = (userId: number): string => {
-  const secret = process.env.JWT_SECRET || 'default-secret';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign(
-    { userId },
-    secret,
-    { expiresIn }
-  );
+  const secret: string = process.env.JWT_SECRET || 'default-secret';
+  const options: SignOptions = {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  };
+  return jwt.sign({ userId }, secret, options);
 };
 
 const generateApiKey = (): string => {
