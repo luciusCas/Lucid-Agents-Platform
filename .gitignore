@@ -18,8 +18,9 @@
 **/downloads/
 **/eggs/
 **/.eggs/
-# Note: Removed **/lib/ to allow src/lib/ for JavaScript source code
-# Python should use venv or .venv directories instead
+# Ignore lib folder but keep src/lib/agentImageMap.ts
+src/lib/
+!src/lib/agentImageMap.ts
 **/lib64/
 **/parts/
 **/sdist/
