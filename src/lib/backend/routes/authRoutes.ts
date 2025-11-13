@@ -7,10 +7,12 @@ import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 
 const generateToken = (userId: number): string => {
+  const secret = process.env.JWT_SECRET || 'default-secret';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   return jwt.sign(
     { userId },
-    process.env.JWT_SECRET || 'default-secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    secret,
+    { expiresIn }
   );
 };
 
