@@ -88,6 +88,25 @@ export default function HeroSection() {
                 </a>
             </div>
 
+            {/* Contract Address - Top Right */}
+            <div className="absolute top-8 right-8 z-10 flex flex-col items-end">
+                <div
+                    className="group inline-flex items-center max-w-xs md:max-w-sm gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all duration-300"
+                    title="Contract Address"
+                >
+                    <span className="text-xs font-medium text-muted-foreground">CA:</span>
+                    <code className="text-[10px] md:text-xs font-mono text-primary break-all">EGyFdwf1dBaJ755LihU8fVnZaK9JZd4BQhsmTfM2pump</code>
+                    <button
+                        type="button"
+                        onClick={() => navigator.clipboard?.writeText("EGyFdwf1dBaJ755LihU8fVnZaK9JZd4BQhsmTfM2pump")}
+                        className="text-[10px] md:text-xs text-primary/80 hover:text-primary underline decoration-dotted"
+                        aria-label="Copy contract address"
+                    >
+                        Copy
+                    </button>
+                </div>
+            </div>
+
             <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
                 <div className="space-y-12">
                     {/* Hero Content with Mascot */}
